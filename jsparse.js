@@ -3,21 +3,22 @@
 /*
 TODO
  - flag suspicious terminals (upper case words)
- - allow multiple productions per non-terminal, and remove special meaning of pipe character
  - reported error location wrong when input does not conform to grammar
 */
 
 var grammarText =
-        "S:              STMTS\n" +
-        "STMTS:          STMT STMTS | \n" +
-        "STMT:           IF_STMT | FN_CALL_STMT\n" +
-        "IF_STMT:        if [(] BOOL_EXPR [)] [{] STMTS [}]\n" +
-        "FN_CALL_STMT:   VAR [(][)]\n" +
-        "BOOL_EXPR:      VAR COMPARISON_OP NUM_VALUE | true | false\n" +
-        "NUM_VALUE:      DIGITS | VAR\n" +
-        "DIGITS:         [0-9]+\n" +
-        "COMPARISON_OP:  == | > | < | >= | <=\n" +
-        "VAR:            [a-z][a-zA-Z0-9]*\n";
+        "S:        STMTS\n" +
+        "STMTS:    STMT STMTS\n" +
+        "STMTS:    \n" +
+        "STMT:     FUNCTION\n" +
+        "STMT:     COMMENT\n" +
+        "STMT:     STRING\n" +
+        "STMT:     OTHER\n" +
+        "FUNCTION: function[()][)][{] STMTS [}]\n" +
+        "OTHER:    [a-zA-Z0-9_]+\n" +
+        "COMMENT:  /[*] ([^*]|\\*[^/])* [*]/\n" +
+        "STRING:   \"[^\"]*\"";
+
 
 function buildGrammar(grammarText){
     var grammar = {}, lines = grammarText.split('\n');
@@ -26,19 +27,14 @@ function buildGrammar(grammarText){
         if (line) {
             var parts = line.split(':'),
                 nonTerminal = parts.shift(':').trim(),
-                substitutions = parts.join(':').trim();
+                substitution = parts.join(':').trim();
 
-            grammar[nonTerminal] = substitutions.split('|').
-                map(function(s){ return s.trim(); }).
-                map(function(s){ return s.split(' ').
-                    map(function(s){ return s.trim();});
-                });
+            if (!grammar[nonTerminal]){
+                grammar[nonTerminal] = [];
+            }
+            grammar[nonTerminal].push(substitution.split(' ').map(function(s){ return s.trim();}));
         }
     });
-
-    function escape(s){
-        return s.replace(/[\-\/\\\^$*+?.()|\[\]{}]/g, '\\$&');
-    }
 
     function makeParseResult(charsConsumed, parseTreeFragment){
         return {
@@ -76,6 +72,7 @@ function buildGrammar(grammarText){
                 });
 
                 if (matched){
+                    //console.log('consumed non terminal [' + input + '] ' + this.name + ' ' + mostCharsMatched);
                     nonTerminalName = this.name;
                     return makeParseResult(mostCharsMatched, {symbol : nonTerminalName, text : input.substr(0, mostCharsMatched), children : parseTreeFragment});
                 }
@@ -129,7 +126,7 @@ var print = (function(){
 }());
 
 document.getElementById('grammar').innerHTML = grammarText;
-document.getElementById('code').innerHTML = 'if(a<5){action1()}';
+document.getElementById('code').innerHTML = 'function(){\n    function(){\n        some code here\n    }\n}';
 
 document.getElementById('go').onclick = function(){
     var grammarText = document.getElementById('grammar').value,
