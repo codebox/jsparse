@@ -1,17 +1,23 @@
 "use strict";
 
+/*
+TODO
+ - flag suspicious terminals (upper case words)
+ - allow multiple productions per non-terminal, and remove special meaning of pipe character
+ - reported error location wrong when input does not conform to grammar
+*/
+
 var grammarText =
         "S:              STMTS\n" +
         "STMTS:          STMT STMTS | \n" +
         "STMT:           IF_STMT | FN_CALL_STMT\n" +
-        "IF_STMT:        if ( BOOL_EXPR ) { STMTS }\n" +
-        "FN_CALL_STMT:   action1() | action2() | action3()\n" +
+        "IF_STMT:        if [(] BOOL_EXPR [)] [{] STMTS [}]\n" +
+        "FN_CALL_STMT:   VAR [(][)]\n" +
         "BOOL_EXPR:      VAR COMPARISON_OP NUM_VALUE | true | false\n" +
-        "NUM_VALUE:      DIGIT DIGITS | VAR\n" +
-        "DIGITS:         DIGIT DIGITS | \n" +
-        "DIGIT:          0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9\n" +
+        "NUM_VALUE:      DIGITS | VAR\n" +
+        "DIGITS:         [0-9]+\n" +
         "COMPARISON_OP:  == | > | < | >= | <=\n" +
-        "VAR:            a | b | c\n";
+        "VAR:            [a-z][a-zA-Z0-9]*\n";
 
 function buildGrammar(grammarText){
     var grammar = {}, lines = grammarText.split('\n');
@@ -77,9 +83,9 @@ function buildGrammar(grammarText){
         };
     }
     function buildTerminal(text) {
-        var regex = new RegExp("^\\s*" + escape(text));
+        var regex = new RegExp("^\\s*" + text);
         return {
-            text : text,
+            text : regex,
             isTerminal : true,
             consume : function(input){
                 var match = regex.exec(input), matchText;
@@ -130,8 +136,17 @@ document.getElementById('go').onclick = function(){
         grammar = buildGrammar(grammarText),
         input = document.getElementById('code').value,
         output = document.getElementById('output'),
+        result = document.getElementById('result'),
         tree = grammar['S'][0][0].consume(input);
+    console.log(grammar);
 
+    if (tree.charsConsumed === input.length){
+        result.innerHTML = 'Parsed ok';
+        result.className = 'ok';
+    } else {
+        result.innerHTML = 'Parse error after ' + tree.charsConsumed + ' characters';
+        result.className = 'error';
+    }
     output.innerHTML = print(tree).join('<br>');
 };
 

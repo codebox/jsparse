@@ -6,6 +6,22 @@
     		textarea{
     			font-family: monospace;
     		}
+    		#result{
+    			border: 1px solid grey;
+    			width: 400px;
+    			border-radius: 2px;
+    			margin: 5px 0;
+    			font-family: sans-serif;
+    			padding: 2px;
+    			font-size: 12px;
+    			color: #333;
+    		}
+    		.ok{
+    			background-color: #cfc;
+    		}
+    		.error{
+				background-color: #fcc;
+    		}
     	</style>
 	</head>
 	<body>
@@ -13,6 +29,7 @@
 		<textarea id="code" rows="20" cols="60"></textarea>
 		<br>
 		<button id="go">Parse</button>
+		<div id="result"></div>
 		<pre id="output"></pre>
 		<script src="jsparse.js"></script>
 	</body>
